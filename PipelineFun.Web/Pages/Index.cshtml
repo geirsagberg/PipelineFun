@@ -1,0 +1,77 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+@section Scripts {
+    <script src="~/lib/vue/dist/vue.js"></script>
+
+    <script>
+        const app = new Vue({
+            el: '#app',
+            data: {
+                todoLists: [],
+                selectedListId: null,
+                newListTitle: ''
+            },
+            methods: {
+                createList: async () => {
+                    const body = JSON.stringify({
+                        title: app.newListTitle
+                    })
+                    const response = await fetch('/TodoLists', {
+                        method: 'POST',
+                        headers: {
+                            "Content-Type": "application/json; charset=utf-8",
+                            "Accept": "application/json; charset=utf-8"
+                        },
+                        body
+                        })
+                    if (response.ok) {
+                        const list = await response.json()
+                        app.todoLists.push(list)
+                        app.newListTitle = ''
+                    } else {
+                        alert(response.status)
+                    }
+                }
+            }
+        })
+        
+        fetch('/TodoLists', {
+            method: 'GET',
+            headers: {
+                "Accept": "application/json; charset=utf-8"
+            }
+        }).then(response => {
+            if (response.ok) {
+                return response.json()
+            }
+            }).then(json => {
+                app.todoLists = json
+            })
+    </script>
+}
+
+<div id="app">
+    <h1>Fun with CQRS and pipelines</h1>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-4">
+                <h2>Lists</h2>
+                <ul v-for="list in todoLists">
+                    <li>{{ list.title }} (Created by {{ list.createdBy }})</li>
+                </ul>
+                <input v-model="newListTitle"/>
+                <button v-on:click="createList" class="btn btn-primary">Create list</button>
+            </div>
+            <div v-if="selectedListId" class="col-sm-8">
+                <h2>Items</h2>
+                <ul v-for="todo in todoLists[selectedListId].todos">
+                    <li>{{ todo.title }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
